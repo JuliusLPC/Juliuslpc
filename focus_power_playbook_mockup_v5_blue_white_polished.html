@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Focus Power Playbook — Mockup v5 (Blue + White, Polished)</title>
+<style>
+  :root{
+    --ink:#0b1f44;           /* deep navy text */
+    --muted:#46628a;         /* muted navy */
+    --line:#e3ecf7;          /* soft divider */
+    --bg:#f7faff;            /* blue-tinted white */
+    --blue:#0052CC;          /* primary */
+    --blue2:#2E8BFF;         /* accent */
+    --blue3:#E6F0FF;         /* light */
+    --white:#FFFFFF;
+    --shadow:0 10px 24px rgba(0,82,204,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+
+  /* Wave header */
+  header{
+    position:sticky;top:0;z-index:10;color:var(--white);border-bottom:1px solid var(--line);
+    padding:16px;display:flex;align-items:center;gap:12px;
+    background:
+      radial-gradient(1200px 160px at 20% 120%, rgba(46,139,255,.25), transparent 60%),
+      radial-gradient(1200px 160px at 80% 120%, rgba(0,82,204,.25), transparent 60%),
+      linear-gradient(90deg, var(--blue), var(--blue2));
+  }
+  .wave{position:absolute;left:0;right:0;bottom:-1px;height:60px;background-repeat:no-repeat;background-size:cover;
+    background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 60" preserveAspectRatio="none"><path d="M0,20 C200,60 400,0 600,30 C800,60 900,20 1000,35 L1000,60 L0,60 Z" fill="%23f7faff"/></svg>');
+    pointer-events:none;opacity:.9}
+  .logo{font-weight:900;letter-spacing:.3px;position:relative}
+  .tag{background:rgba(255,255,255,.28);padding:4px 10px;border-radius:999px;font-size:12px;position:relative}
+  .container{padding:16px;max-width:1100px;margin:0 auto}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow);transition:transform .15s ease, box-shadow .15s ease}
+  .card:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(0,82,204,.16)}
+  h1{margin:0 0 10px;font-size:22px}
+  h3{margin:0 0 8px;font-size:18px}
+  .muted{color:var(--muted)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--blue);background:var(--white);cursor:pointer;font-weight:800;color:var(--blue);box-shadow:0 2px 6px rgba(0,0,0,.06);transition:transform .05s ease, box-shadow .15s ease}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--blue);color:var(--white)}
+  .btn.alt{border-color:var(--blue2);color:var(--blue2)}
+  .btn.ghost{border-color:transparent;color:var(--blue)}
+  .timer{font-size:28px;font-weight:900;padding:6px 0}
+  .tiny{font-size:12px;color:var(--muted)}
+  /* Today's Progress tiles */
+  .progressGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+  .tile{background:var(--blue);color:var(--white);padding:14px;border-radius:14px;text-align:center;box-shadow:0 4px 10px rgba(0,82,204,.15)}
+  .tile.b2{background:var(--blue2)}
+  .tile.b3{background:#0a4cb3}
+  .tile.light{background:var(--blue3);color:var(--blue)}
+  .tabbar{
+    position:sticky;bottom:0;background:var(--white);border-top:1px solid var(--line);
+    padding:8px;display:grid;grid-template-columns:repeat(9,1fr);gap:6px
+  }
+  .tab{
+    font-size:12px;text-align:center;padding:8px 4px;border-radius:12px;cursor:pointer;
+    font-weight:800;border:1px solid var(--line);color:#000;background:var(--white);
+    transition:background .2s ease, transform .05s ease;
+  }
+  .tab:active{transform:scale(.98)}
+  .tab.active{background:var(--blue3);border-color:var(--blue3);color:#000}
+  .list{display:grid;gap:8px}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px}
+  .progressbar{width:100%;background:var(--blue3);border-radius:12px;overflow:hidden;height:10px}
+  .progressbar>div{height:10px;background:var(--blue);width:0}
+  .badge{padding:2px 8px;background:var(--blue3);border-radius:999px;font-size:12px;color:var(--blue);border:1px solid var(--line)}
+  .pillset{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:var(--white);cursor:pointer}
+  .pill.active{background:var(--blue3);border-color:var(--blue);color:var(--blue)}
+  .qrModal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:16px}
+  .qrCard{background:var(--white);border-radius:16px;border:1px solid var(--line);padding:16px;max-width:420px;width:100%}
+  canvas{max-width:100%;border-radius:12px;border:1px solid var(--line);background:var(--white)}
+  select, input[type="text"]{padding:8px 10px;border-radius:10px;border:1px solid var(--line);color:var(--ink);background:var(--white)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Focus Power Playbook</div>
+  <div class="tag">Blue + White • v5</div>
+  <div style="margin-left:auto" class="tiny">Simulated — not medical advice</div>
+  <div class="wave"></div>
+</header>
+
+<div class="container">
+  <!-- TODAY -->
+  <section id="screen-today">
+    <div class="card" style="background:linear-gradient(135deg,#f0f6ff,#e6f0ff)">
+      <h1>Today</h1>
+      <div class="muted">Hourly micro-coaching (8:00–20:00). Try the buttons to simulate pings.</div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" onclick="simulateNudge('focus')">Nudge: Focus</button>
+        <button class="btn" onclick="simulateNudge('regulate')">Nudge: Regulate</button>
+        <button class="btn alt" onclick="simulateNudge('routine')">Nudge: Routine</button>
+        <button class="btn" onclick="simulateNudge('movement')">Nudge: Movement</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Anchor Builder</h3>
+      <div class="muted tiny">60-sec priming: visual cue + breath + posture + keyword</div>
+      <div class="list">
+        <div class="item"><span>Touch nose (visual cue)</span><button class="btn" onclick="toast('Great anchor!')">Practice</button></div>
+        <div class="item"><span>4-4-4 breath</span><button class="btn" onclick="breathCoach()">Coach</button></div>
+        <div class="item"><span>Feet planted (posture)</span><button class="btn" onclick="toast('Grounded ✅')">Check</button></div>
+        <div class="item"><span>Keyword: “Steady”</span><button class="btn" onclick="toast('Steady!')">Say it</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>10-Minute Focus Sprint</h3>
+      <div class="row">
+        <select id="taskPick" class="btn">
+          <option>Math worksheet</option>
+          <option>Reading chapter</option>
+          <option>Clean desk</option>
+        </select>
+        <button class="btn primary" onclick="startSprint()">Start</button>
+        <button class="btn" onclick="extendSprint()">Still good → +5m</button>
+        <button class="btn ghost" onclick="endSprint()">End</button>
+      </div>
+      <div id="sprintTimer" class="timer">10:00</div>
+      <div id="sprintStatus" class="tiny">Pick a task and start.</div>
+    </div>
+
+    <div class="card">
+      <h3>2-Minute Defuse</h3>
+      <div class="list">
+        <div class="item">Kneel to eye level. Say: “I see it’s too much right now.”</div>
+        <div class="item">Match breath for 2 slow breaths.</div>
+        <div class="item">Offer choice A/B. Soft voice. 2-sec pauses.</div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" onclick="startDefuse()">Start 2:00</button>
+        <div id="defuseTimer" class="timer">2:00</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Outburst Protocol (Home)</h3>
+      <div class="list">
+        <div class="item"><span>Tap when escalating</span><button class="btn" onclick="startDefuse()">Defuse</button></div>
+        <div class="item"><span>Log likely trigger</span><button class="btn" onclick="logTrigger()">Add</button></div>
+        <div class="item"><span>Post-calm choice A/B</span><button class="btn" onclick="toast('Choice offered.')">Done</button></div>
+      </div>
+    </div>
+
+    <!-- TODAY'S PROGRESS -->
+    <div class="card">
+      <h3>Today’s Progress</h3>
+      <div class="progressGrid">
+        <div class="tile"><div class="tiny" style="color:#cfe0ff">Focus Minutes</div><div id="kpiFocus" style="font-size:22px">0</div></div>
+        <div class="tile b2"><div class="tiny" style="color:#dbebff">Avg Time-to-Calm</div><div id="kpiCalm" style="font-size:22px">–</div></div>
+        <div class="tile b3"><div class="tiny" style="color:#d7e5ff">AM Routine</div><div id="kpiAM" style="font-size:22px">0%</div></div>
+        <div class="tile"><div class="tiny" style="color:#cfe0ff">PM Routine</div><div id="kpiPM" style="font-size:22px">0%</div></div>
+        <div class="tile b2"><div class="tiny" style="color:#dbebff">Diet Swaps</div><div id="kpiSwaps" style="font-size:22px">0</div></div>
+        <div class="tile b3"><div class="tiny" style="color:#d7e5ff">Moves</div><div id="kpiMoves" style="font-size:22px">0</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCHOOL -->
+  <section id="screen-school" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#f1f6ff,#e6f0ff)">
+      <h1>School Challenges</h1>
+      <div class="muted">Support learning without battles.</div>
+    </div>
+    <div class="card">
+      <h3>Homework Map</h3>
+      <div class="list" id="hwList"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" onclick="addHW()">Add Chunk</button>
+        <button class="btn" onclick="markHW()">Mark Next Done</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Teacher Brief</h3>
+      <div class="muted tiny">Strengths, supports, & “what to avoid”.</div>
+      <div class="row pillset" id="teacherPills"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" onclick="openQR()">Generate Teacher QR</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- QR Modal -->
+  <div class="qrModal" id="qrModal">
+    <div class="qrCard">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="margin:0">Teacher Card (Share)</h3>
+        <button class="btn" onclick="closeQR()">Close</button>
+      </div>
+      <div class="tiny" style="margin-bottom:8px">Scan to view a read-only page with strengths, supports, and tips.</div>
+      <canvas id="qrCanvas" width="300" height="300"></canvas>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" onclick="downloadQR()">Download PNG</button>
+        <span class="tiny">Simulated QR for mockup</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUTINES -->
+  <section id="screen-routines" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#f7fbff,#e6f0ff)">
+      <h1>Routines</h1>
+      <div class="muted">5-Minute Morning & Calm Evening</div>
+    </div>
+    <div class="card">
+      <h3>5-Minute Morning</h3>
+      <div id="amList" class="list"></div>
+      <div class="progressbar" style="margin-top:8px"><div id="amProg"></div></div>
+      <div id="amPct" class="tiny">0% complete</div>
+    </div>
+
+    <div class="card">
+      <h3>Calm Evening</h3>
+      <div id="pmList" class="list"></div>
+      <div class="progressbar" style="margin-top:8px"><div id="pmProg"></div></div>
+      <div id="pmPct" class="tiny">0% complete</div>
+    </div>
+
+    <div class="card">
+      <h3>Sleep Ladder</h3>
+      <div class="list" id="sleepList"></div>
+    </div>
+  </section>
+
+  <!-- REGULATE -->
+  <section id="screen-regulate" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#eff6ff,#e6f0ff)">
+      <h1>Regulate</h1>
+      <div class="muted">Emotional control tools that fit a busy day.</div>
+    </div>
+    <div class="card">
+      <h3>Feelings Dial</h3>
+      <div class="row">
+        <button class="btn" onclick="setFeeling('Green')">Green</button>
+        <button class="btn" onclick="setFeeling('Yellow')">Yellow</button>
+        <button class="btn" onclick="setFeeling('Red')">Red</button>
+      </div>
+      <div id="feelingAdvice" class="muted" style="margin-top:10px">Pick a color for guidance.</div>
+    </div>
+    <div class="card">
+      <h3>2-Minute Defuse (Quick)</h3>
+      <div class="row">
+        <button class="btn primary" onclick="startDefuse()">Start 2:00</button>
+        <div id="defuseTimer2" class="timer tiny" style="font-weight:700">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL -->
+  <section id="screen-social" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#f0f6ff,#e6f0ff)">
+      <h1>Social & Peer</h1>
+      <div class="muted">Build real friendships with tiny weekly reps.</div>
+    </div>
+    <div class="card">
+      <h3>Friendship Reps</h3>
+      <div class="list" id="friendList"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" onclick="nextFriendRep()">Next Rep</button>
+        <button class="btn" onclick="toast('Logged a rep!')">Mark Complete</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Rejection Protocol</h3>
+      <div class="list">
+        <div class="item">Reframe: “That was tough—and it doesn’t define you.”</div>
+        <div class="item">Plan one kind ask or message.</div>
+        <div class="item">Parent script: “I’m with you. Want ideas or a hug first?”</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOLS -->
+  <section id="screen-tools" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#f0f6ff,#e6f0ff)">
+      <h1>Tools</h1>
+      <div class="muted">Diet swaps, movement bursts, advocacy scripts.</div>
+    </div>
+    <div class="card">
+      <h3>Diet Swap Picker</h3>
+      <div class="row">
+        <select id="swapCategory">
+          <option>Breakfast</option>
+          <option>Lunch</option>
+          <option>Snacks</option>
+          <option>Dinner</option>
+        </select>
+        <select id="swapList"></select>
+        <button class="btn primary" onclick="useCurrentSwap()">Use Swap</button>
+        <button class="btn" onclick="addCustomSwap()">Add Custom</button>
+      </div>
+      <div class="tiny" id="swapStatus" style="margin-top:8px">Pick a category to load options.</div>
+    </div>
+    <div class="card">
+      <h3>60–120s Movement Bursts</h3>
+      <div class="list">
+        <div class="item"><span>Wall push-offs × 10</span><button class="btn" onclick="countMove()">Done</button></div>
+        <div class="item"><span>Chair squats × 10</span><button class="btn" onclick="countMove()">Done</button></div>
+        <div class="item"><span>Bear walks (30s)</span><button class="btn" onclick="countMove()">Done</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Advocacy Scripts</h3>
+      <div class="list">
+        <div class="item"><span>Email to teacher (check-in)</span><button class="btn" onclick="copyText('Hi [Teacher]...')">Copy</button></div>
+        <div class="item"><span>Principal meeting request</span><button class="btn" onclick="copyText('Hello [Principal]...')">Copy</button></div>
+        <div class="item"><span>Doctor visit questions</span><button class="btn" onclick="copyText('Top questions...')">Copy</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section id="screen-progress" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#f7fbff,#e6f0ff)">
+      <h1>Today’s Progress</h1>
+      <div class="row">
+        <span class="tiny">Family View:</span>
+        <select id="childSelect"></select>
+      </div>
+      <div class="muted">See wins and patterns at a glance.</div>
+    </div>
+    <div class="card">
+      <h3>Weekly Graph</h3>
+      <div class="tiny">Focus Minutes and Routine Completion (%)</div>
+      <canvas id="progressChart" width="900" height="280"></canvas>
+    </div>
+    <div class="card">
+      <h3>Daily Summary</h3>
+      <div class="list">
+        <div class="item"><span>Focus Minutes</span><strong id="pFocus">0</strong></div>
+        <div class="item"><span>Avg Time-to-Calm (sec)</span><strong id="pCalm">–</strong></div>
+        <div class="item"><span>AM Routine</span><strong id="pAM">0%</strong></div>
+        <div class="item"><span>PM Routine</span><strong id="pPM">0%</strong></div>
+        <div class="item"><span>Diet Swaps</span><strong id="pSwaps">0</strong></div>
+        <div class="item"><span>Movement Bursts</span><strong id="pMoves">0</strong></div>
+        <div class="item"><span>Friendship Reps</span><strong id="pFriends">0</strong></div>
+        <div class="item"><span>Homework Chunks</span><strong id="pHW">0/0</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARENT -->
+  <section id="screen-parent" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#f7fbff,#e6f0ff)">
+      <h1>Parent Playbook</h1>
+      <div class="muted">Confidence tools & anti-guilt reflections.</div>
+    </div>
+    <div class="card">
+      <h3>Daily 30-second Read</h3>
+      <div id="playbookTip" class="muted">Consistency beats intensity. One small win today is enough.</div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="nextTip()">Another Tip</button>
+        <button class="btn primary" onclick="logEffort()">I used a script</button>
+        <div class="tiny" id="effortLog">Effort signals today: 0</div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Anti-Guilt Meter</h3>
+      <div class="progressbar"><div id="guiltProg"></div></div>
+      <div id="guiltText" class="tiny">You did enough today. ❤️</div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="screen-settings" style="display:none">
+    <div class="card">
+      <h3>Settings</h3>
+      <div class="list">
+        <div class="item"><span>Faith Mode</span><button class="btn" onclick="toggleFaith()"><span id="faithState">Off</span></button></div>
+        <div class="item"><span>Quiet Hours</span><span class="tiny">20:00 → 08:00 (mock)</span></div>
+        <div class="item"><span>School Hours</span><span class="tiny">08:30 → 15:00 (mock)</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Tabbar -->
+<nav class="tabbar">
+  <div class="tab active" onclick="show('today')" id="tab-today">Today</div>
+  <div class="tab" onclick="show('school')" id="tab-school">School</div>
+  <div class="tab" onclick="show('routines')" id="tab-routines">Routines</div>
+  <div class="tab" onclick="show('regulate')" id="tab-regulate">Regulate</div>
+  <div class="tab" onclick="show('social')" id="tab-social">Social</div>
+  <div class="tab" onclick="show('tools')" id="tab-tools">Tools</div>
+  <div class="tab" onclick="show('progress')" id="tab-progress">Today’s Progress</div>
+  <div class="tab" onclick="show('parent')" id="tab-parent">Parent</div>
+  <div class="tab" onclick="show('settings')" id="tab-settings">Settings</div>
+</nav>
+
+<script>
+  // State
+  let focusMinutes = 0;
+  let calmSamples = [];
+  let swaps = 0, moves = 0, friendReps = 0, effort = 0;
+  let sprintInterval=null, sprintSeconds=600;
+  let defuseInterval=null, defuseSeconds=120;
+  let faith=false;
+
+  let am = [{id:1,label:'Clothes laid out',done:false},{id:2,label:'Backpack packed',done:false},{id:3,label:'Breakfast finished',done:false}];
+  let pm = [{id:1,label:'Lights down',done:false},{id:2,label:'Stretch x3',done:false},{id:3,label:'Story audio',done:false}];
+  let sleep = [{id:1,label:'Lights down'},{id:2,label:'Stretch'},{id:3,label:'Warm drink'},{id:4,label:'Story audio'},{id:5,label:'Device lock'}];
+  let hw = [];
+  let teacherBrief = ['Strength: Curious', 'Works: 10-min sprints', 'Avoid: multi-step requests'];
+
+  // Family dataset (weekly simulated)
+  const children = [
+    { id:'c1', name:'Ava', weekly:{ focus:[15,20,25,30,20,10,0], am:[60,70,80,75,65,40,0], pm:[50,60,70,65,55,35,0] } },
+    { id:'c2', name:'Noah', weekly:{ focus:[10,15,20,18,22,12,0], am:[55,60,65,60,58,45,0], pm:[45,55,60,58,52,40,0] } },
+    { id:'c3', name:'Mason', weekly:{ focus:[20,22,28,26,24,16,0], am:[70,72,78,74,68,50,0], pm:[60,62,68,64,58,45,0] } },
+  ];
+  let activeChildId = children[0].id;
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  // Nudge simulation
+  function simulateNudge(kind){
+    if(kind==='focus'){ startSprint(); alert('Nudge: Focus Sprint started'); }
+    if(kind==='regulate'){ startDefuse(); }
+    if(kind==='routine'){ show('routines'); }
+    if(kind==='movement'){ show('tools'); }
+  }
+
+  // Focus Sprint
+  function startSprint(){
+    clearInterval(sprintInterval);
+    sprintSeconds=600;
+    document.getElementById('sprintStatus').textContent='Sprint running…';
+    sprintInterval=setInterval(()=>{
+      sprintSeconds--;
+      updateSprintTimer();
+      if(sprintSeconds<=0){
+        clearInterval(sprintInterval); sprintInterval=null;
+        focusMinutes+=10;
+        document.getElementById('sprintStatus').textContent='Great work! Logged 10 minutes.';
+        syncKPIs();
+      }
+    },1000);
+    updateSprintTimer();
+  }
+  function extendSprint(){ if(sprintInterval){ sprintSeconds+=300; document.getElementById('sprintStatus').textContent='Extended +5 minutes.'; updateSprintTimer(); } }
+  function endSprint(){
+    if(sprintInterval){
+      clearInterval(sprintInterval); sprintInterval=null;
+      const earned = Math.max(0, Math.round((600 - sprintSeconds)/60));
+      focusMinutes += earned;
+      document.getElementById('sprintStatus').textContent='Ended early. Logged '+earned+' minutes.';
+      syncKPIs(); updateSprintTimer();
+    }
+  }
+  function updateSprintTimer(){
+    const m = Math.floor(sprintSeconds/60).toString().padStart(2,'0');
+    const s = (sprintSeconds%60).toString().padStart(2,'0');
+    document.getElementById('sprintTimer').textContent = m+':'+s;
+  }
+
+  // Defuse
+  function startDefuse(){
+    clearInterval(defuseInterval);
+    defuseSeconds=120;
+    const start=Date.now();
+    defuseInterval=setInterval(()=>{
+      defuseSeconds--;
+      document.getElementById('defuseTimer').textContent = mmss(defuseSeconds);
+      if(defuseSeconds<=0){
+        clearInterval(defuseInterval); defuseInterval=null;
+        const elapsed = Math.round((Date.now()-start)/1000);
+        calmSamples.push(elapsed); alert('Calm in ~'+elapsed+'s');
+        syncKPIs();
+      }
+    },1000);
+  }
+  function mmss(sec){ const m=Math.floor(sec/60).toString().padStart(2,'0'); const s=(sec%60).toString().padStart(2,'0'); return m+':'+s; }
+
+  // School
+  function renderSchool(){
+    const list=document.getElementById('hwList'); list.innerHTML='';
+    if(hw.length===0){
+      const d=document.createElement('div'); d.className='item';
+      d.innerHTML='<span>No chunks added yet.</span><button class="btn" onclick="addHW()">Add</button>';
+      list.appendChild(d);
+    } else {
+      hw.forEach((c,i)=>{
+        const row=document.createElement('div'); row.className='item';
+        row.innerHTML = `<span>${c.done?'✅ ':''}${i+1}. ${c.label}</span>`;
+        const b=document.createElement('button'); b.className='btn'; b.textContent=c.done?'Undo':'Done';
+        b.onclick=()=>{hw[i].done=!hw[i].done; renderSchool(); syncKPIs();};
+        row.appendChild(b); list.appendChild(row);
+      });
+    }
+    const pills=document.getElementById('teacherPills'); pills.innerHTML='';
+    teacherBrief.forEach(t=>{ const p=document.createElement('div'); p.className='pill'; p.textContent=t; p.onclick=()=>p.classList.toggle('active'); pills.appendChild(p); });
+  }
+  function addHW(){ const t=prompt('Add homework chunk (e.g., “Math #1–5”)'); if(t){ hw.push({label:t,done:false}); renderSchool(); syncKPIs(); } }
+  function markHW(){ const i = hw.findIndex(c=>!c.done); if(i>=0){ hw[i].done=true; renderSchool(); syncKPIs(); } else alert('All chunks done!'); }
+
+  // QR
+  function openQR(){
+    document.getElementById('qrModal').style.display='flex';
+    drawFakeQR('https://example.com/teacher-card/'+activeChildId);
+  }
+  function closeQR(){ document.getElementById('qrModal').style.display='none'; }
+  function drawFakeQR(text){
+    const cv = document.getElementById('qrCanvas');
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle='#FFFFFF'; ctx.fillRect(0,0,cv.width,cv.height);
+    const cell=10; const cols=cv.width/cell, rows=cv.height/cell;
+    for(let y=0;y<rows;y++){
+      for(let x=0;x<cols;x++){
+        const code = text.charCodeAt((x*y + y + x) % text.length);
+        if((code + x + y) % 7 < 3){ ctx.fillStyle='#000'; ctx.fillRect(x*cell, y*cell, cell-1, cell-1); }
+      }
+    }
+    ctx.fillStyle='#000';
+    ctx.fillRect(10,10,60,60); ctx.clearRect(20,20,40,40);
+    ctx.fillRect(cv.width-70,10,60,60); ctx.clearRect(cv.width-60,20,40,40);
+    ctx.fillRect(10,cv.height-70,60,60); ctx.clearRect(20,cv.height-60,40,40);
+  }
+  function downloadQR(){
+    const cv=document.getElementById('qrCanvas');
+    const link=document.createElement('a');
+    link.download='teacher_qr.png'; link.href=cv.toDataURL('image/png'); link.click();
+  }
+
+  // Routines & Sleep
+  function renderRoutines(){
+    const amList=document.getElementById('amList');
+    const pmList=document.getElementById('pmList');
+    const sleepList=document.getElementById('sleepList');
+    if(!amList) return;
+    amList.innerHTML=''; pmList.innerHTML=''; sleepList.innerHTML='';
+    am.forEach((s,i)=>amList.appendChild(rowToggle(am,i)));
+    pm.forEach((s,i)=>pmList.appendChild(rowToggle(pm,i)));
+    sleep.forEach(s=>{
+      const r=document.createElement('div'); r.className='item';
+      r.innerHTML = `<span>${s.label}</span><span class="tiny">cue</span>`;
+      sleepList.appendChild(r);
+    });
+    updateRoutineProgress();
+  }
+  function rowToggle(list, idx){
+    const s=list[idx]; const row=document.createElement('div'); row.className='item';
+    const left=document.createElement('span'); left.textContent = (s.done?'✅ ':'') + s.label;
+    const btn=document.createElement('button'); btn.className='btn'; btn.textContent=s.done?'Undo':'Done';
+    btn.onclick=()=>{ list[idx].done=!list[idx].done; renderRoutines(); syncKPIs(); };
+    row.appendChild(left); row.appendChild(btn); return row;
+  }
+  function updateRoutineProgress(){
+    const amPct = Math.round(100*am.filter(s=>s.done).length/am.length);
+    const pmPct = Math.round(100*pm.filter(s=>s.done).length/pm.length);
+    const amProg=document.getElementById('amProg'); if(amProg) amProg.style.width = amPct+'%';
+    const pmProg=document.getElementById('pmProg'); if(pmProg) pmProg.style.width = pmPct+'%';
+    const amPctEl=document.getElementById('amPct'); if(amPctEl) amPctEl.textContent = amPct+'% complete';
+    const pmPctEl=document.getElementById('pmPct'); if(pmPctEl) pmPctEl.textContent = pmPct+'% complete';
+  }
+
+  // Social
+  function renderSocial(){
+    const list=document.getElementById('friendList'); if(!list) return;
+    list.innerHTML='';
+    const current = ['Ask one curious question.','Share one thing you like.','Pause 2 seconds before speaking.','Invite a classmate to join a game.','Give one genuine compliment.'][friendReps % 5];
+    const row=document.createElement('div'); row.className='item';
+    row.innerHTML = `<span>${current}</span><button class="btn primary" onclick="completeFriendRep()">Complete</button>`;
+    list.appendChild(row);
+  }
+  function nextFriendRep(){ friendReps++; renderSocial(); syncKPIs(); }
+  function completeFriendRep(){ friendReps++; alert('Rep logged!'); renderSocial(); syncKPIs(); }
+
+  // Tools: Diet Swap Picker
+  const swapData = {
+    'Breakfast':['Sugary cereal → oats + berries','Sweetened yogurt → plain + fruit','Pancakes syrup → peanut butter + banana'],
+    'Lunch':['Chips → popcorn or carrots + hummus','Soda → sparkling water + citrus','White bread → whole grain wrap'],
+    'Snacks':['Candy → apple slices + cheese','Ice cream → frozen yogurt + berries','Cookies → trail mix (nuts/seeds)'],
+    'Dinner':['Fried nuggets → baked tenders','White pasta → chickpea pasta','Heavy sauce → olive oil + herbs']
+  };
+  function populateSwaps(){
+    const cat = document.getElementById('swapCategory').value;
+    const list = document.getElementById('swapList');
+    list.innerHTML='';
+    swapData[cat].forEach(s=>{ const opt=document.createElement('option'); opt.textContent=s; list.appendChild(opt); });
+    document.getElementById('swapStatus').textContent = 'Loaded '+swapData[cat].length+' options for '+cat+'.';
+  }
+  function useCurrentSwap(){
+    const sel=document.getElementById('swapList'); if(sel.value){ swaps++; syncKPIs(); alert('Swap used: '+sel.value); }
+  }
+  function addCustomSwap(){
+    const cat=document.getElementById('swapCategory').value;
+    const txt=prompt('Add a custom swap (e.g., "Fries → baked potato")');
+    if(txt){ swapData[cat].push(txt); populateSwaps(); alert('Added: '+txt); }
+  }
+
+  // Parent Playbook
+  function nextTip(){ const tips=['Consistency beats intensity. One small win today is enough.','Name the win, not the failure. Kids remember what you reinforce.','Lead with calm. Your tone is a nervous system signal.','Plan the next tiny step; ignore the rest.','Praise effort, not talent—effort is repeatable.']; document.getElementById('playbookTip').textContent=tips[Math.floor(Math.random()*tips.length)]; }
+  function logEffort(){ effort++; document.getElementById('effortLog').textContent='Effort signals today: '+effort; const p=Math.min(100,effort*20); document.getElementById('guiltProg').style.width=p+'%'; document.getElementById('guiltText').textContent = p<50?'Keep going—effort counts.':'You did enough today. ❤️'; }
+
+  // Settings
+  function toggleFaith(){ faith=!faith; document.getElementById('faithState').textContent = faith?'On':'Off'; alert('Faith Mode '+(faith?'enabled':'disabled')+'.'); }
+
+  // Today's Progress
+  function avg(arr){ if(!arr.length) return null; return Math.round(arr.reduce((a,b)=>a+b,0)/arr.length); }
+  function syncKPIs(){
+    const amPct = Math.round(100*am.filter(s=>s.done).length/am.length);
+    const pmPct = Math.round(100*pm.filter(s=>s.done).length/pm.length);
+    document.getElementById('kpiFocus').textContent = String(focusMinutes);
+    document.getElementById('kpiCalm').textContent = avg(calmSamples) ?? '–';
+    document.getElementById('kpiAM').textContent = amPct+'%';
+    document.getElementById('kpiPM').textContent = pmPct+'%';
+    document.getElementById('kpiSwaps').textContent = String(swaps);
+    document.getElementById('kpiMoves').textContent = String(moves);
+    syncProgress();
+  }
+  function syncProgress(){
+    document.getElementById('pFocus').textContent = String(focusMinutes);
+    document.getElementById('pCalm').textContent = avg(calmSamples) ?? '–';
+    document.getElementById('pAM').textContent = Math.round(100*am.filter(s=>s.done).length/am.length)+'%';
+    document.getElementById('pPM').textContent = Math.round(100*pm.filter(s=>s.done).length/pm.length)+'%';
+    document.getElementById('pSwaps').textContent = String(swaps);
+    document.getElementById('pMoves').textContent = String(moves);
+    document.getElementById('pFriends').textContent = String(friendReps);
+    document.getElementById('pHW').textContent = hw.filter(c=>c.done).length + '/' + hw.length;
+  }
+
+  // Family View + Chart
+  function populateFamilySelect(){
+    const sel=document.getElementById('childSelect'); sel.innerHTML='';
+    children.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; sel.appendChild(o); });
+    sel.value=activeChildId; sel.onchange=()=>{ activeChildId=sel.value; drawChart(); };
+  }
+  function drawChart(){
+    const cv=document.getElementById('progressChart'); const ctx=cv.getContext('2d');
+    ctx.clearRect(0,0,cv.width,cv.height);
+    const pad=40, w=cv.width, h=cv.height, innerW=w-pad-20, innerH=h-pad-20;
+    ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,10); ctx.lineTo(pad,h-pad); ctx.lineTo(w-10,h-pad); ctx.stroke();
+
+    const child = children.find(c=>c.id===activeChildId) || children[0];
+    const focus = child.weekly.focus;
+    const routineAvg = child.weekly.am.map((v,i)=>Math.round((v + child.weekly.pm[i])/2));
+    const maxFocus = Math.max(40, ...focus);
+    const maxRoutine = 100;
+    const xStep = innerW/(days.length-1);
+
+    ctx.fillStyle='#6b7c93'; ctx.font='12px sans-serif';
+    for(let i=0;i<days.length;i++){
+      const x=pad+i*xStep; ctx.fillText(days[i],x-10,h-15); ctx.beginPath(); ctx.moveTo(x,h-pad); ctx.lineTo(x,h-pad-4); ctx.stroke();
+    }
+    for(let y=0;y<=4;y++){
+      const v=y*(maxFocus/4); const yy=h-pad-(v/maxFocus)*innerH;
+      ctx.fillText(String(Math.round(v)),10,yy+4);
+      ctx.beginPath(); ctx.strokeStyle='#eef2ff'; ctx.moveTo(pad,yy); ctx.lineTo(w-10,yy); ctx.stroke();
+    }
+
+    // Focus Minutes (primary blue)
+    ctx.strokeStyle= getComputedStyle(document.documentElement).getPropertyValue('--blue'); ctx.lineWidth=3; ctx.beginPath();
+    focus.forEach((v,i)=>{ const x=pad+i*xStep; const y=h-pad-(v/maxFocus)*innerH; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+    ctx.stroke();
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--blue');
+    focus.forEach((v,i)=>{ const x=pad+i*xStep; const y=h-pad-(v/maxFocus)*innerH; ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill(); });
+
+    // Routine % (bright blue)
+    ctx.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--blue2'); ctx.lineWidth=3; ctx.beginPath();
+    routineAvg.forEach((v,i)=>{ const x=pad+i*xStep; const y=h-pad-(v/maxRoutine)*innerH; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+    ctx.stroke();
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--blue2');
+    routineAvg.forEach((v,i)=>{ const x=pad+i*xStep; const y=h-pad-(v/maxRoutine)*innerH; ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill(); });
+
+    // Legend
+    ctx.fillStyle='#0b1f44'; ctx.font='12px sans-serif';
+    ctx.fillText('Focus Minutes', pad+10, 18); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--blue'); ctx.fillRect(pad-2, 10, 8, 8);
+    ctx.fillStyle='#0b1f44'; ctx.fillText('Routine Avg %', pad+130, 18); ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--blue2'); ctx.fillRect(pad+115, 10, 8, 8);
+  }
+
+  // Utils
+  function copyText(t){ navigator.clipboard.writeText(t); alert('Copied to clipboard.'); }
+  function logTrigger(){ const t=prompt('Trigger (e.g., transition, hunger, noise)?'); if(t) alert('Logged: '+t); }
+  function breathCoach(){ alert('Breathe in 4 • hold 4 • out 4 — two rounds'); }
+
+  // Init
+  function init(){
+    renderRoutines(); renderSchool(); renderSocial(); syncKPIs();
+    if(document.getElementById('swapCategory')){ document.getElementById('swapCategory').onchange=populateSwaps; populateSwaps(); }
+    populateFamilySelect(); drawChart();
+  }
+  function show(name){
+    const ids=['today','school','routines','regulate','social','tools','progress','parent','settings'];
+    ids.forEach(id=>{
+      const el=document.getElementById('screen-'+id);
+      const tab=document.getElementById('tab-'+id);
+      if(el) el.style.display=(id===name)?'block':'none';
+      if(tab) tab.classList.toggle('active', id===name);
+    });
+    if(name==='progress'){ drawChart(); }
+    if(name==='routines'){ renderRoutines(); }
+    if(name==='school'){ renderSchool(); }
+    if(name==='social'){ renderSocial(); }
+  }
+  init();
+</script>
+</body>
+</html>
