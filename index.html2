@@ -1,0 +1,488 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, Pause, Trophy, Home, RefreshCw, Award } from "lucide-react";
+
+/**
+ * Focus Quest — ADHD-Friendly Mini-Game Suite
+ * ------------------------------------------------------------
+ * Quick, rewarding focus sprints (30–90s) with immediate feedback.
+ * Built for browser: no backend required. Uses Tailwind for styling.
+ *
+ * Mini-games included (extensible):
+ * 1) ColorTap — Tap only the target color under time pressure
+ * 2) MemoryGrid — Simple flip-to-match memory pairs
+ * 3) Move Break — Short IRL micro-mission (no tracking, just pacing & rewards)
+ *
+ * Features:
+ * - 30/60/90s timers
+ * - Coins & streaks
+ * - Pause without penalty
+ * - Choice of mission (reduces rejection sensitivity)
+ * - "Today minutes focused" tracker
+ * - Gentle animations (Framer Motion)
+ */
+
+// ---------- Utility ----------
+const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+// ---------- Shared UI ----------
+const Card = ({ className = "", children }) => (
+  <div className={`rounded-2xl shadow-lg bg-white/90 backdrop-blur p-5 ${className}`}>
+    {children}
+  </div>
+);
+
+const Pill = ({ children }) => (
+  <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm bg-white/80">
+    {children}
+  </span>
+);
+
+const PrimaryBtn = ({ children, onClick, disabled }) => (
+  <motion.button
+    onClick={onClick}
+    disabled={disabled}
+    whileTap={{ scale: disabled ? 1 : 0.98 }}
+    whileHover={{ y: disabled ? 0 : -1 }}
+    className={`inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-semibold shadow-sm border disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white border-blue-700`}
+  >
+    {children}
+  </motion.button>
+);
+
+const GhostBtn = ({ children, onClick }) => (
+  <motion.button
+    onClick={onClick}
+    whileTap={{ scale: 0.98 }}
+    className="inline-flex items-center gap-2 rounded-2xl px-4 py-2 font-medium border bg-white hover:bg-gray-50"
+  >
+    {children}
+  </motion.button>
+);
+
+// ---------- Timer Hook ----------
+function useGameTimer({ initial = 60, isRunning, onElapsed }) {
+  const [secondsLeft, setSecondsLeft] = useState(initial);
+  const lastTick = useRef(Date.now());
+
+  useEffect(() => setSecondsLeft(initial), [initial]);
+
+  useEffect(() => {
+    if (!isRunning) return;
+    lastTick.current = Date.now();
+    const id = setInterval(() => {
+      const now = Date.now();
+      const diff = Math.floor((now - lastTick.current) / 1000);
+      if (diff >= 1) {
+        setSecondsLeft((s) => {
+          const next = s - diff;
+          if (next <= 0) {
+            clearInterval(id);
+            onElapsed?.();
+            return 0;
+          }
+          return next;
+        });
+        lastTick.current = now;
+      }
+    }, 200);
+    return () => clearInterval(id);
+  }, [isRunning, onElapsed]);
+
+  return { secondsLeft, setSecondsLeft };
+}
+
+// ---------- Mini-Game 1: ColorTap ----------
+function ColorTap({ onEnd, grantCoins, difficulty = 1 }) {
+  const targetColors = ["red", "blue", "green", "yellow"];
+  const [target, setTarget] = useState(targetColors[randInt(0, targetColors.length - 1)]);
+  const [grid, setGrid] = useState([]);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+
+  const size = clamp(16 + difficulty * 4, 16, 32); // number of tiles
+
+  const regenGrid = () => {
+    const palette = ["red", "blue", "green", "yellow", "purple", "orange"];
+    const arr = Array.from({ length: size }, () => palette[randInt(0, clamp(3 + difficulty, 3, palette.length - 1))]);
+    setGrid(arr);
+    setTarget(targetColors[randInt(0, targetColors.length - 1)]);
+  };
+
+  useEffect(() => {
+    regenGrid();
+    // eslint-disable-next-line
+  }, [difficulty]);
+
+  const handleTap = (color, idx) => {
+    if (color === target) {
+      setScore((s) => s + 1);
+      setStreak((k) => k + 1);
+      setGrid((g) => g.map((c, i) => (i === idx ? "white" : c)));
+      if ((streak + 1) % 5 === 0) {
+        // little jackpot
+        grantCoins(3);
+      } else {
+        grantCoins(1);
+      }
+    } else {
+      setStreak(0);
+      grantCoins(0);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <Pill>
+          <span className="w-2 h-2 rounded-full" style={{ background: target }}></span>
+          Tap color: <b className="capitalize">{target}</b>
+        </Pill>
+        <Pill>Score: {score}</Pill>
+      </div>
+
+      <div
+        className="grid gap-2"
+        style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(size))}, minmax(0, 1fr))` }}
+      >
+        {grid.map((c, i) => (
+          <motion.button
+            key={i}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => handleTap(c, i)}
+            className="aspect-square rounded-xl border shadow-sm"
+            style={{ background: c === "white" ? "white" : c }}
+            aria-label={`tile-${i}`}
+          />
+        ))}
+      </div>
+
+      <div className="flex justify-end">
+        <GhostBtn onClick={regenGrid}>
+          <RefreshCw className="w-4 h-4" /> New Grid
+        </GhostBtn>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Mini-Game 2: MemoryGrid ----------
+function MemoryGrid({ onEnd, grantCoins, difficulty = 1 }) {
+  // pair count grows with difficulty
+  const pairs = clamp(3 + difficulty, 3, 8);
+  const symbols = ["★", "◆", "●", "▲", "♥", "♣", "♠", "☀", "☂", "⚑", "✿", "☯"];
+  const deck = useMemo(() => {
+    const picks = [];
+    while (picks.length < pairs) {
+      const s = symbols[randInt(0, symbols.length - 1)];
+      if (!picks.includes(s)) picks.push(s);
+    }
+    const raw = [...picks, ...picks].sort(() => Math.random() - 0.5);
+    return raw.map((val, i) => ({ id: i, val, open: false, matched: false }));
+  }, [difficulty]);
+
+  const [cards, setCards] = useState(deck);
+  const [openIds, setOpenIds] = useState([]);
+  const matchedCount = cards.filter((c) => c.matched).length;
+
+  useEffect(() => setCards(deck), [deck]);
+
+  const flip = (idx) => {
+    setCards((cs) =>
+      cs.map((c, i) => (i === idx && !c.matched && !c.open ? { ...c, open: true } : c))
+    );
+    setOpenIds((o) => (o.length < 2 ? [...o, idx] : o));
+  };
+
+  useEffect(() => {
+    if (openIds.length === 2) {
+      const [a, b] = openIds;
+      const A = cards[a];
+      const B = cards[b];
+      if (!A || !B) return;
+      if (A.val === B.val) {
+        setTimeout(() => {
+          setCards((cs) => cs.map((c, i) => (i === a || i === b ? { ...c, matched: true } : c)));
+          grantCoins(3);
+          setOpenIds([]);
+        }, 300);
+      } else {
+        setTimeout(() => {
+          setCards((cs) => cs.map((c, i) => (i === a || i === b ? { ...c, open: false } : c)));
+          setOpenIds([]);
+        }, 500);
+      }
+    }
+  }, [openIds, cards, grantCoins]);
+
+  useEffect(() => {
+    if (matchedCount === cards.length && cards.length > 0) {
+      onEnd?.();
+    }
+  }, [matchedCount, cards.length, onEnd]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Pill>Match all pairs!</Pill>
+      <div
+        className="grid gap-3"
+        style={{ gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(cards.length))}, minmax(0,1fr))` }}
+      >
+        {cards.map((c, i) => (
+          <motion.button
+            key={c.id}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => flip(i)}
+            className={`aspect-square rounded-xl border shadow-sm flex items-center justify-center text-3xl font-bold select-none ${
+              c.matched ? "bg-green-100 border-green-300" : c.open ? "bg-blue-100 border-blue-300" : "bg-white"
+            }`}
+          >
+            {c.open || c.matched ? c.val : "?"}
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Mini-Game 3: Move Break ----------
+function MoveBreak({ onEnd, grantCoins }) {
+  const prompts = [
+    "Do 8 jumping jacks",
+    "Take 5 deep breaths (4s in, 6s out)",
+    "Stretch arms overhead for 10 seconds",
+    "Walk to the nearest door and back",
+    "Sip water and roll your shoulders 5x",
+  ];
+  const [idx, setIdx] = useState(randInt(0, prompts.length - 1));
+  return (
+    <div className="flex flex-col gap-4">
+      <Card className="bg-blue-50 border border-blue-200">
+        <div className="text-lg font-semibold">Quick Movement Mission</div>
+        <p className="text-gray-700">{prompts[idx]}</p>
+      </Card>
+      <div className="flex gap-3">
+        <GhostBtn onClick={() => setIdx((i) => (i + 1) % prompts.length)}>
+          <RefreshCw className="w-4 h-4" /> New Prompt
+        </GhostBtn>
+        <PrimaryBtn
+          onClick={() => {
+            grantCoins(2);
+            onEnd?.();
+          }}
+        >
+          Complete
+        </PrimaryBtn>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Main App ----------
+const MODES = [
+  { key: "color", name: "Color Tap", desc: "Tap only the target color.", component: ColorTap },
+  { key: "memory", name: "Memory Grid", desc: "Flip and match pairs.", component: MemoryGrid },
+  { key: "move", name: "Move Break", desc: "Short body reset.", component: MoveBreak },
+];
+
+export default function FocusQuestApp() {
+  const [screen, setScreen] = useState("home"); // home | play | stats
+  const [modeKey, setModeKey] = useState("color");
+  const [isRunning, setIsRunning] = useState(false);
+  const [duration, setDuration] = useState(60); // 30 / 60 / 90
+  const [coins, setCoins] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [difficulty, setDifficulty] = useState(1);
+  const [todaySeconds, setTodaySeconds] = useState(0);
+
+  const grantCoins = (n) => {
+    if (n <= 0) return;
+    setCoins((c) => c + n);
+  };
+
+  const { secondsLeft, setSecondsLeft } = useGameTimer({
+    initial: duration,
+    isRunning,
+    onElapsed: () => {
+      setIsRunning(false);
+      setStreak(0);
+    },
+  });
+
+  // track focused seconds while running
+  useEffect(() => {
+    if (!isRunning) return;
+    const id = setInterval(() => setTodaySeconds((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [isRunning]);
+
+  const mode = MODES.find((m) => m.key === modeKey) ?? MODES[0];
+  const GameComponent = mode.component;
+
+  const startRun = () => {
+    setIsRunning(true);
+    setSecondsLeft(duration);
+  };
+  const pauseRun = () => setIsRunning(false);
+  const resumeRun = () => setIsRunning(true);
+
+  const onMiniEnd = () => {
+    // when a mini-game signals "win"
+    setStreak((s) => s + 1);
+    grantCoins(5);
+    // Increase difficulty a bit every 3 streaks
+    setDifficulty((d) => (streak > 0 && (streak + 1) % 3 === 0 ? clamp(d + 1, 1, 6) : d));
+  };
+
+  const resetSession = () => {
+    setCoins(0);
+    setStreak(0);
+    setDifficulty(1);
+    setSecondsLeft(duration);
+  };
+
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-900">
+      <div className="max-w-5xl mx-auto px-4 py-6 md:py-10">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <motion.div initial={{ rotate: -8 }} animate={{ rotate: 0 }} className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center shadow-md">
+              <Award className="w-6 h-6 text-white" />
+            </motion.div>
+            <div>
+              <div className="text-xl md:text-2xl font-extrabold leading-tight">Focus Quest</div>
+              <div className="text-sm text-gray-600">Fast, rewarding focus sprints</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Pill>
+              <Trophy className="w-4 h-4" /> {coins} coins
+            </Pill>
+            <Pill>Streak: {streak}</Pill>
+            <Pill>Today: {Math.floor(todaySeconds / 60)}m</Pill>
+          </div>
+        </div>
+
+        {/* Top Controls */}
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card>
+            <div className="font-semibold mb-2">1) Pick a Mission</div>
+            <div className="flex flex-wrap gap-2">
+              {MODES.map((m) => (
+                <motion.button
+                  key={m.key}
+                  onClick={() => setModeKey(m.key)}
+                  whileTap={{ scale: 0.98 }}
+                  className={`rounded-2xl border px-4 py-2 text-sm shadow-sm ${
+                    modeKey === m.key ? "bg-blue-600 text-white border-blue-700" : "bg-white hover:bg-gray-50"
+                  }`}
+                >
+                  {m.name}
+                </motion.button>
+              ))}
+            </div>
+            <div className="mt-2 text-sm text-gray-600">{mode.desc}</div>
+          </Card>
+
+          <Card>
+            <div className="font-semibold mb-2">2) Set Sprint</div>
+            <div className="flex items-center gap-2">
+              {[30, 60, 90].map((d) => (
+                <motion.button
+                  key={d}
+                  onClick={() => setDuration(d)}
+                  whileTap={{ scale: 0.98 }}
+                  className={`rounded-2xl border px-4 py-2 text-sm shadow-sm ${
+                    duration === d ? "bg-indigo-600 text-white border-indigo-700" : "bg-white hover:bg-gray-50"
+                  }`}
+                >
+                  {d}s
+                </motion.button>
+              ))}
+            </div>
+            <div className="mt-3 text-sm text-gray-600">Difficulty: {difficulty}</div>
+          </Card>
+
+          <Card>
+            <div className="font-semibold mb-2">3) Timer</div>
+            <div className="flex items-center justify-between">
+              <div className="text-3xl font-black tabular-nums">{secondsLeft}s</div>
+              <div className="flex gap-2">
+                {!isRunning ? (
+                  <PrimaryBtn onClick={startRun}>
+                    <Play className="w-4 h-4" /> Start
+                  </PrimaryBtn>
+                ) : (
+                  <>
+                    <GhostBtn onClick={pauseRun}>
+                      <Pause className="w-4 h-4" /> Pause
+                    </GhostBtn>
+                    <GhostBtn onClick={resetSession}>
+                      <RefreshCw className="w-4 h-4" /> Reset
+                    </GhostBtn>
+                  </>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Game Stage */}
+        <div className="mt-6 grid md:grid-cols-3 gap-4">
+          <Card className="md:col-span-2">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold">Mission Arena</div>
+              <Pill>
+                Time {isRunning ? "Running" : "Stopped"}
+              </Pill>
+            </div>
+            {!isRunning && (
+              <div className="text-sm text-gray-600 mb-4">
+                Press <span className="font-semibold">Start</span> to begin your sprint. You can pause anytime — no penalties.
+              </div>
+            )}
+
+            <div className={`transition-opacity ${isRunning ? "opacity-100" : "opacity-60"}`}>
+              <GameComponent onEnd={onMiniEnd} grantCoins={grantCoins} difficulty={difficulty} />
+            </div>
+          </Card>
+
+          <div className="flex flex-col gap-4">
+            <Card>
+              <div className="font-semibold mb-2">How to Win</div>
+              <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
+                <li>Finish mini-goals to earn coins.</li>
+                <li>Every 3 wins increases difficulty slightly.</li>
+                <li>Short sprints (30–90s) = less boredom, more wins.</li>
+              </ul>
+            </Card>
+            <Card>
+              <div className="font-semibold mb-2">Quick Tips</div>
+              <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
+                <li>Pick the mission that feels easiest to start.</li>
+                <li>Pause guilt-free whenever you need.</li>
+                <li>Movement breaks boost dopamine — try a Move Break.</li>
+              </ul>
+            </Card>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 flex items-center justify-between text-sm text-gray-600">
+          <div>
+            Built for ADHD brains — tiny wins → big momentum. Add more mini-games later (sorting, sequences, Simon Says, etc.).
+          </div>
+          <div className="flex gap-2">
+            <GhostBtn onClick={() => {
+              setCoins(0); setStreak(0); setDifficulty(1); setTodaySeconds(0);
+            }}>
+              <Home className="w-4 h-4" /> Reset All
+            </GhostBtn>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
